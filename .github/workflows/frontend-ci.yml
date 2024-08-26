@@ -38,9 +38,8 @@ jobs:
     - name: Set up Node.js with latest version
       uses: actions/setup-node@v3
       with:
-        node-version: latest
+        node-version: 18
         cache: 'npm'
-        path: ~/.npm
         cache-dependency-path: starter/frontend/package-lock.json
     - name: Install NPM Dependencies
       run: cd starter/frontend && npm ci
