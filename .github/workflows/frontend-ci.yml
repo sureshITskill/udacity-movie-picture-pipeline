@@ -23,7 +23,6 @@ jobs:
         cache-dependency-path: starter/frontend/package-lock.json
 
     - name: Install NPM Dependencies
-      working-directory: starter/frontend
       run: cd starter/frontend && npm ci
 
     - name: Run npm lint
