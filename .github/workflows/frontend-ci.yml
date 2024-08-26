@@ -1,0 +1,75 @@
+# Workflow name
+name: Udacity Frontend Continuous Integration
+# Trigger for the workflow based on pull request on main (default) branch
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+# Jobs defined in the workflow
+jobs:
+  frontendlint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name:  Set up Node.js with latest version
+      uses: actions/setup-node@v3
+      with:
+        node-version: latest
+        path: ~/.npm
+        cache: 'npm'
+        cache-dependency-path: starter/frontend/package-lock.json
+
+    - name: Install NPM Dependencies
+      working-directory: starter/frontend
+      run: cd  starter/frontend && npm ci
+
+    - name: Run npm lint
+      run: cd starter/frontend && npm run lint
+  frontendtest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js with latest version
+      uses: actions/setup-node@v3
+      with:
+        node-version: latest
+        cache: 'npm'
+        path: ~/.npm
+        cache-dependency-path: starter/frontend/package-lock.json
+    - name: Install NPM Dependencies
+      run: cd starter/frontend && npm ci
+  
+    - name: Run the npm test
+      run: cd starter/frontend && npm run test
+frontendbuild:
+    needs: [frontendlint, frontendtest]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+    
+    - name: Set up Node.js with latest version
+      uses: actions/setup-node@v3
+      with:
+        node-version: latest
+        cache: 'npm'
+        cache-dependency-path: starter/frontend/package-lock.json
+    - name: Install NPM Dependencies
+      run: cd starter/frontend && npm ci
+    - name: Run the npm test
+      run: cd starter/frontend && npm run test
+
+    - name: Build and Run Docker Image
+      run: |
+        cd starter/frontend
+        docker build --tag=movieproject-frontend:latest .
+        docker run --name movieproject-frontend -p 3000:3000 -d movieproject-frontend    
+
