@@ -24,7 +24,7 @@ jobs:
 
     - name: Install NPM Dependencies
       working-directory: starter/frontend
-      run: cd  starter/frontend && npm ci
+      run: cd starter/frontend && npm ci
 
     - name: Run npm lint
       run: cd starter/frontend && npm run lint
