@@ -70,6 +70,6 @@ frontendbuild:
     - name: Build and Run Docker Image
       run: |
         cd starter/frontend
-        docker build --tag=movieproject-frontend:latest .
-        docker run --name movieproject-frontend -p 3000:3000 -d movieproject-frontend    
+        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=mp-frontend:latest .
+        docker run --name mp-frontend -p 3000:3000 -d mp-frontend]
 
