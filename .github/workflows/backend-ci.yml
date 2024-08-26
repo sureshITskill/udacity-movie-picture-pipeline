@@ -1,0 +1,64 @@
+# Workflow name
+name: Udacity Backend Continuous Integration
+# Trigger for the workflow based on pull request on main (default) branch
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backendlint:
+    runs-on: ubuntu-latest
+    environment: Devlopmnet Environment
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Setup Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    - name: Install python Dependencies using pip command
+      run:  |
+        cd starter/backend
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pip install flake8
+    - name: run the lint for any errors
+      run: cd starter/backend && pipenv run lint
+  backendtest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Setup Python 3.10
+      uses:  actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install python Dependencies using pip command
+      run:  |
+        cd starter/backend
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pip install flake8
+
+    - name: Run pipenv test
+      run: cd starter/backend && pipenv install pytest && pipenv run test  
+  backendbuild:
+    needs: [backendlint, backendtest]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check the Repository
+      uses: actions/checkout@v3
+
+    - name: Build Docker Image 
+      run: |
+        cd starter/backend
+        docker build --tag mp-backend:latest .
+    
