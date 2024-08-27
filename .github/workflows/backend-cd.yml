@@ -1,0 +1,85 @@
+name: Backend Continuous Deployment
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+jobs:
+  backendlint:
+    runs-on: ubuntu-latest
+    environment: Dev
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Setup Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    - name: Install python Dependencies using pip command
+      run:  |
+        cd starter/backend
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pip install flake8
+    - name: run the lint for any errors
+      run: cd starter/backend && pipenv run lint
+  backendtest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Setup Python 3.10
+      uses:  actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install python Dependencies using pip command
+      run:  |
+        cd starter/backend
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pip install flake8
+    - name: Run pipenv test
+      run: cd starter/backend && pipenv install pytest && pipenv run test
+  backendbuild:
+    needs: [backendlint, backendtest]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check the Repository
+      uses: actions/checkout@v3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    - name: Login to Amazon using AWS credentials
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Build the image and push to the ECR (refer terraform output) 
+      env:
+        IMAGE_TAG: latest
+        REPO_NAME: backend
+      run: |
+        cd starter/backend
+        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG .
+        docker push 777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+    - name: Configure Kubeconfig with cluster created(refer Terraform output)
+      run:
+       cd starter/backend/k8s
+       aws eks update-kubeconfig --name cluster --region us-east-1
+    - name: Deploy using ECR Docker Image to EKS
+      env:
+        IMAGE_TAG: latest
+        REPO_NAME: backend
+      run: |
+          cd starter/backend/k8s
+          kustomize edit set image backend=777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+          kustomize build | kubectl apply -f
+      
