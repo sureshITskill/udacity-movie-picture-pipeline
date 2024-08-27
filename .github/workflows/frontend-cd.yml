@@ -22,7 +22,6 @@ jobs:
         cache-dependency-path: starter/frontend/package-lock.json
 
     - name: Install NPM Dependencies
-      working-directory: starter/frontend
       run: cd  starter/frontend && npm ci
 
     - name: Run npm lint
@@ -34,19 +33,18 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v3
 
-    - name: Set up Node.js with latest version
+    - name: Set up Node.js with 18 version
       uses: actions/setup-node@v3
       with:
-        node-version: latest
+        node-version: 18
         cache: 'npm'
-        path: ~/.npm
         cache-dependency-path: starter/frontend/package-lock.json
     - name: Install NPM Dependencies
       run: cd starter/frontend && npm ci
   
     - name: Run the npm test
       run: cd starter/frontend && npm run test
-frontendbuild:
+  frontendbuild:
     needs: [frontendlint, frontendtest]
     runs-on: ubuntu-latest
     
@@ -57,7 +55,7 @@ frontendbuild:
     - name: Set up Node.js with latest version
       uses: actions/setup-node@v3
       with:
-        node-version: latest
+        node-version: 18
         cache: 'npm'
         cache-dependency-path: starter/frontend/package-lock.json
     - name: Configure AWS Credentials
@@ -66,23 +64,30 @@ frontendbuild:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
-    - name: Login to Amazon 
+    - name: Login to Amazon using AWS credentials
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
     
-    - name: Build the image and push to the ECR 
+    - name: Build the image and push to the ECR (refer terraform output) 
       env:
         IMAGE_TAG: latest
         REPO_NAME: frontend
       run: |
         cd starter/frontend
-        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG .
-        docker push 669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 777496403167.dkr.ecr.us-east-1.amazonaws.com/frontend/$REPO_NAME:$IMAGE_TAG .
+        docker push 777496403167.dkr.ecr.us-east-1.amazonaws.com/frontend/$REPO_NAME:$IMAGE_TAG
+
+    - name: Configure Kubeconfig with cluster created(refer Terraform output)
+      run:
+       cd starter/frontend/k8s
+       aws eks update-kubeconfig --name cluster --region us-east-1
 
 
-    - name: Install NPM Dependencies
-      run: cd starter/frontend && npm ci
-    - name: Run the npm test
-      run: cd starter/frontend && npm run test
-
-    - name: Build and Run Docker Image  
+    - name: Deploy using ECR Docker Image to EKS
+      env:
+        IMAGE_TAG: latest
+        REPO_NAME: frontend
+      run: |
+          cd starter/frontend/k8s
+          kustomize edit set image frontend=777496403167.dkr.ecr.us-east-1.amazonaws.com/frontend/$REPO_NAME:$IMAGE_TAG
+          kustomize build | kubectl apply -f -
