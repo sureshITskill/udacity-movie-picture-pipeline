@@ -78,9 +78,9 @@ jobs:
         docker push 777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
 
     - name: Configure Kubeconfig with cluster created(refer Terraform output)
-      run:
-       cd starter/frontend/k8s
-       aws eks update-kubeconfig --name cluster --region us-east-1
+      run: |
+        cd starter/frontend/k8s
+        aws eks update-kubeconfig --name cluster --region us-east-1
 
 
     - name: Deploy using ECR Docker Image to EKS
