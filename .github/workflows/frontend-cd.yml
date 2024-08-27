@@ -74,8 +74,8 @@ jobs:
         REPO_NAME: frontend
       run: |
         cd starter/frontend
-        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 777496403167.dkr.ecr.us-east-1.amazonaws.com/frontend/$REPO_NAME:$IMAGE_TAG .
-        docker push 777496403167.dkr.ecr.us-east-1.amazonaws.com/frontend/$REPO_NAME:$IMAGE_TAG
+        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG .
+        docker push 777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
 
     - name: Configure Kubeconfig with cluster created(refer Terraform output)
       run:
@@ -89,5 +89,5 @@ jobs:
         REPO_NAME: frontend
       run: |
           cd starter/frontend/k8s
-          kustomize edit set image frontend=777496403167.dkr.ecr.us-east-1.amazonaws.com/frontend/$REPO_NAME:$IMAGE_TAG
+          kustomize edit set image frontend=777496403167.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
           kustomize build | kubectl apply -f -
